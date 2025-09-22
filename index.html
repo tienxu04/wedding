@@ -1,151 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Wedding People: A Novel</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #444;
-            font-size: 2em;
-        }
-        #audio-player-container {
-            margin-top: 20px;
-            background: #eee;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        #audio-player {
-            width: 100%;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            background: #e9e9e9;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-align: left;
-        }
-        li:hover {
-            background: #ddd;
-        }
-        .chapter-title {
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>The Wedding People — Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;margin:24px;max-width:820px}
+    h1{font-size:1.25rem;margin:0 0 8px}
+    .now{margin:4px 0 16px;color:#444}
+    .wrap{display:grid;grid-template-columns:1fr;gap:16px}
+    @media (min-width:800px){.wrap{grid-template-columns:1fr 320px;align-items:start}}
+    audio{width:100%}
+    ul{list-style:none;margin:0;padding:0;max-height:70vh;overflow:auto;border:1px solid #e5e5e5;border-radius:10px}
+    li{padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;display:flex;gap:8px;align-items:center}
+    li:last-child{border-bottom:none}
+    li:hover{background:#f7f7f7}
+    li.active{background:#e8f0ff}
+    .num{display:inline-block;min-width:2.2em;color:#666}
+    .title{flex:1}
+  </style>
 </head>
 <body>
+  <h1>The Wedding People — Audio</h1>
+  <div class="now">Now playing: <strong id="now-title">—</strong></div>
 
-<div class="container">
-    <h1>The Wedding People: A Novel</h1>
-    <div id="audio-player-container">
-        <p><strong>Đang phát:</strong> <span id="now-playing-title"></span></p>
-        <audio id="audio-player" controls></audio>
-    </div>
+  <div class="wrap">
+    <audio id="player" controls preload="none"></audio>
 
-    <h2>Danh sách chương</h2>
-    <ul id="chapter-list">
-        </ul>
-</div>
+    <ul id="list"></ul>
+  </div>
 
-<script>
-  // ⚠️ ĐỔI thành URL Worker của bạn (KHÔNG phải r2.dev)
-  const workerBaseUrl = "https://shiny-sunset-67b3.tienxu04.workers.dev"; // vd: https://r2-audio-gate.yourname.workers.dev
+  <script>
+    // 🔗 Worker của bạn
+    const WORKER_BASE = "https://shiny-sunset-67b3.tienxu04.workers.dev";
 
-  const chapters = [
-    { id: 1, name: "Prologue" },
-    { id: 2, name: "Chapter One" },
-    { id: 3, name: "Chapter Two" },
-    { id: 4, name: "Chapter Three" },
-    { id: 5, name: "Chapter Four" },
-    { id: 6, name: "Chapter Five" },
-    { id: 7, name: "Chapter Six" },
-    { id: 8, name: "Chapter Seven" },
-    { id: 9, name: "Chapter Eight" },
-    { id: 10, name: "Chapter Nine" },
-    { id: 11, name: "Chapter Ten" },
-    { id: 12, name: "Chapter Eleven" },
-    { id: 13, name: "Chapter Twelve" },
-    { id: 14, name: "Chapter Thirteen" },
-    { id: 15, name: "Chapter Fourteen" },
-    { id: 16, name: "Chapter Fifteen" },
-    { id: 17, name: "Chapter Sixteen" },
-    { id: 18, name: "Chapter Seventeen" },
-    { id: 19, name: "Chapter Eighteen" },
-    { id: 20, name: "Chapter Nineteen" },
-    { id: 21, name: "Chapter Twenty" },
-    { id: 22, name: "Chapter Twenty-One" },
-    { id: 23, name: "Chapter Twenty-Two" },
-    { id: 24, name: "Chapter Twenty-Three" },
-    { id: 25, name: "Chapter Twenty-Four" }
-  ];
+    // 25 file: 01 = Prologue, 02..25 = Chapter 1..24
+    const TOTAL_TRACKS = 25;
+    const FILE_BASENAME = "The Wedding People A Novel.mp3";
 
-  const audioPlayer = document.getElementById('audio-player');
-  const chapterList = document.getElementById('chapter-list');
-  const nowPlayingTitle = document.getElementById('now-playing-title');
+    // Tạo dữ liệu hiển thị (label) khớp với quy luật tên file
+    function trackLabel(n){ // n = 1..25
+      if(n === 1) return "Prologue";
+      const num = n - 1; // 2 -> Ch1, 25 -> Ch24
+      const names = [
+        "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+        "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen","Twenty",
+        "Twenty-One","Twenty-Two","Twenty-Three","Twenty-Four"
+      ];
+      return `Chapter ${names[num-1]}`;
+    }
 
-  // Helper: tạo src trỏ tới Worker với ?file=<encoded>
-  function buildWorkerSrc(filename) {
-    const u = new URL(workerBaseUrl);
-    u.searchParams.set('file', filename); // URLSearchParams sẽ tự encode
-    return u.toString();
-  }
+    function fileName(n){ // "01 - The Wedding People A Novel.mp3"
+      const two = String(n).padStart(2, "0");
+      return `${two} - ${FILE_BASENAME}`;
+    }
 
-  // Render danh sách + gắn sự kiện play
-  chapters.forEach(chapter => {
-    const li = document.createElement('li');
-    const fileNumber = chapter.id.toString().padStart(2, '0');
-    const filename = `${fileNumber} - The Wedding People A Novel.mp3`;
+    function workerSrc(filename){
+      const u = new URL(WORKER_BASE);
+      u.searchParams.set("file", filename); // Worker sẽ decode đúng
+      return u.toString();
+    }
 
-    li.innerHTML = `<span class="chapter-title">${chapter.name}</span>`;
-    li.dataset.file = filename;
+    const player = document.getElementById("player");
+    const listEl = document.getElementById("list");
+    const nowEl  = document.getElementById("now-title");
 
-    li.addEventListener('click', () => {
-      // Thêm chút UI state (nếu bạn có CSS .active)
-      chapterList.querySelectorAll('li.active').forEach(n => n.classList.remove('active'));
-      li.classList.add('active');
+    // Render danh sách 25 track
+    for(let i=1;i<=TOTAL_TRACKS;i++){
+      const li = document.createElement("li");
+      li.dataset.idx = String(i);
+      li.dataset.file = fileName(i);
+      li.innerHTML = `<span class="num">${String(i).padStart(2,'0')}.</span>
+                      <span class="title">${trackLabel(i)}</span>`;
+      li.addEventListener("click", ()=> playTrack(i));
+      listEl.appendChild(li);
+    }
 
-      audioPlayer.src = buildWorkerSrc(li.dataset.file);
-      // Bắt đầu phát
-      audioPlayer.play().catch(() => {
-        // Một số trình duyệt chặn autoplay: chờ user bấm Play
-      });
-      nowPlayingTitle.textContent = chapter.name;
-    });
+    function playTrack(n){
+      // UI highlight
+      listEl.querySelectorAll("li.active").forEach(el=>el.classList.remove("active"));
+      const row = listEl.querySelector(`li[data-idx="${n}"]`);
+      if(row) row.classList.add("active");
 
-    chapterList.appendChild(li);
-  });
+      const fname = fileName(n);
+      nowEl.textContent = trackLabel(n);
+      player.src = workerSrc(fname);
+      player.play().catch(()=>{/* autoplay có thể bị chặn, user bấm Play là chạy */});
+    }
 
-  // (Tuỳ chọn) Tự động chọn chương đầu khi tải xong
-  // window.addEventListener('DOMContentLoaded', () => {
-  //   const first = chapterList.querySelector('li');
-  //   if (first) first.click();
-  // });
-</script>
-
-
+    // (Tuỳ chọn) Tự động chọn Prologue khi mở trang:
+    // playTrack(1);
+  </script>
 </body>
-
 </html>
