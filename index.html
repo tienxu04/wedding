@@ -71,66 +71,81 @@
 </div>
 
 <script>
-    // URL cơ sở của bucket R2
-    const r2BaseUrl = "https://pub-959aad1a14704f9f9e7e2bf5b600ef05.r2.dev";
+  // ⚠️ ĐỔI thành URL Worker của bạn (KHÔNG phải r2.dev)
+  const workerBaseUrl = "https://shiny-sunset-67b3.tienxu04.workers.dev"; // vd: https://r2-audio-gate.yourname.workers.dev
 
-    // Thông tin về các chương
-    const chapters = [
-        { id: 1, name: "Prologue" },
-        { id: 2, name: "Chapter One" },
-        { id: 3, name: "Chapter Two" },
-        { id: 4, name: "Chapter Three" },
-        { id: 5, name: "Chapter Four" },
-        { id: 6, name: "Chapter Five" },
-        { id: 7, name: "Chapter Six" },
-        { id: 8, name: "Chapter Seven" },
-        { id: 9, name: "Chapter Eight" },
-        { id: 10, name: "Chapter Nine" },
-        { id: 11, name: "Chapter Ten" },
-        { id: 12, name: "Chapter Eleven" },
-        { id: 13, name: "Chapter Twelve" },
-        { id: 14, name: "Chapter Thirteen" },
-        { id: 15, name: "Chapter Fourteen" },
-        { id: 16, name: "Chapter Fifteen" },
-        { id: 17, name: "Chapter Sixteen" },
-        { id: 18, name: "Chapter Seventeen" },
-        { id: 19, name: "Chapter Eighteen" },
-        { id: 20, name: "Chapter Nineteen" },
-        { id: 21, name: "Chapter Twenty" },
-        { id: 22, name: "Chapter Twenty-One" },
-        { id: 23, name: "Chapter Twenty-Two" },
-        { id: 24, name: "Chapter Twenty-Three" },
-        { id: 25, name: "Chapter Twenty-Four" }
-    ];
+  const chapters = [
+    { id: 1, name: "Prologue" },
+    { id: 2, name: "Chapter One" },
+    { id: 3, name: "Chapter Two" },
+    { id: 4, name: "Chapter Three" },
+    { id: 5, name: "Chapter Four" },
+    { id: 6, name: "Chapter Five" },
+    { id: 7, name: "Chapter Six" },
+    { id: 8, name: "Chapter Seven" },
+    { id: 9, name: "Chapter Eight" },
+    { id: 10, name: "Chapter Nine" },
+    { id: 11, name: "Chapter Ten" },
+    { id: 12, name: "Chapter Eleven" },
+    { id: 13, name: "Chapter Twelve" },
+    { id: 14, name: "Chapter Thirteen" },
+    { id: 15, name: "Chapter Fourteen" },
+    { id: 16, name: "Chapter Fifteen" },
+    { id: 17, name: "Chapter Sixteen" },
+    { id: 18, name: "Chapter Seventeen" },
+    { id: 19, name: "Chapter Eighteen" },
+    { id: 20, name: "Chapter Nineteen" },
+    { id: 21, name: "Chapter Twenty" },
+    { id: 22, name: "Chapter Twenty-One" },
+    { id: 23, name: "Chapter Twenty-Two" },
+    { id: 24, name: "Chapter Twenty-Three" },
+    { id: 25, name: "Chapter Twenty-Four" }
+  ];
 
-    const audioPlayer = document.getElementById('audio-player');
-    const chapterList = document.getElementById('chapter-list');
-    const nowPlayingTitle = document.getElementById('now-playing-title');
+  const audioPlayer = document.getElementById('audio-player');
+  const chapterList = document.getElementById('chapter-list');
+  const nowPlayingTitle = document.getElementById('now-playing-title');
 
-    // Tạo danh sách chương
-    chapters.forEach(chapter => {
-        const listItem = document.createElement('li');
-        const fileNumber = chapter.id.toString().padStart(2, '0');
-        listItem.innerHTML = `<span class="chapter-title">${chapter.name}</span>`;
-        listItem.dataset.file = `${fileNumber} - The Wedding People A Novel.mp3`;
-        listItem.addEventListener('click', () => {
-            const fullUrl = `${r2BaseUrl}/${listItem.dataset.file}`;
-            audioPlayer.src = fullUrl;
-            audioPlayer.play();
-            nowPlayingTitle.textContent = chapter.name;
-        });
-        chapterList.appendChild(listItem);
+  // Helper: tạo src trỏ tới Worker với ?file=<encoded>
+  function buildWorkerSrc(filename) {
+    const u = new URL(workerBaseUrl);
+    u.searchParams.set('file', filename); // URLSearchParams sẽ tự encode
+    return u.toString();
+  }
+
+  // Render danh sách + gắn sự kiện play
+  chapters.forEach(chapter => {
+    const li = document.createElement('li');
+    const fileNumber = chapter.id.toString().padStart(2, '0');
+    const filename = `${fileNumber} - The Wedding People A Novel.mp3`;
+
+    li.innerHTML = `<span class="chapter-title">${chapter.name}</span>`;
+    li.dataset.file = filename;
+
+    li.addEventListener('click', () => {
+      // Thêm chút UI state (nếu bạn có CSS .active)
+      chapterList.querySelectorAll('li.active').forEach(n => n.classList.remove('active'));
+      li.classList.add('active');
+
+      audioPlayer.src = buildWorkerSrc(li.dataset.file);
+      // Bắt đầu phát
+      audioPlayer.play().catch(() => {
+        // Một số trình duyệt chặn autoplay: chờ user bấm Play
+      });
+      nowPlayingTitle.textContent = chapter.name;
     });
 
-    // Tự động phát chương đầu tiên khi trang tải xong
-    // setTimeout(() => {
-    //     const firstChapter = chapterList.querySelector('li');
-    //     if (firstChapter) {
-    //         firstChapter.click();
-    //     }
-    // }, 500); // Đợi 0.5 giây để đảm bảo DOM được tải đầy đủ
+    chapterList.appendChild(li);
+  });
 
+  // (Tuỳ chọn) Tự động chọn chương đầu khi tải xong
+  // window.addEventListener('DOMContentLoaded', () => {
+  //   const first = chapterList.querySelector('li');
+  //   if (first) first.click();
+  // });
 </script>
 
+
 </body>
+
 </html>
