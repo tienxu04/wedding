@@ -67,32 +67,58 @@
     const listEl = document.getElementById("list");
     const nowEl  = document.getElementById("now-title");
 
-    // Render danh sách 25 track
-    for(let i=1;i<=TOTAL_TRACKS;i++){
-      const li = document.createElement("li");
-      li.dataset.idx = String(i);
-      li.dataset.file = fileName(i);
-      li.innerHTML = `<span class="num">${String(i).padStart(2,'0')}.</span>
-                      <span class="title">${trackLabel(i)}</span>`;
-      li.addEventListener("click", ()=> playTrack(i));
-      listEl.appendChild(li);
-    }
+   let current = 1; // lưu track đang phát
 
-    function playTrack(n){
-      // UI highlight
-      listEl.querySelectorAll("li.active").forEach(el=>el.classList.remove("active"));
-      const row = listEl.querySelector(`li[data-idx="${n}"]`);
-      if(row) row.classList.add("active");
+// Render danh sách track
+for (let i = 1; i <= TOTAL_TRACKS; i++) {
+  const li = document.createElement("li");
+  li.dataset.idx = String(i);
+  li.dataset.file = fileName(i);
+  li.innerHTML = `
+    <span class="num">${String(i).padStart(2,'0')}.</span>
+    <span class="title">${trackLabel(i)}</span>`;
+  li.addEventListener("click", () => playTrack(i));
+  listEl.appendChild(li);
+}
 
-      const fname = fileName(n);
-      nowEl.textContent = trackLabel(n);
-      player.src = workerSrc(fname);
-      player.play().catch(()=>{/* autoplay có thể bị chặn, user bấm Play là chạy */});
-    }
+function playTrack(n) {
+  current = n; // cập nhật bài hiện tại
+
+  // UI highlight
+  listEl.querySelectorAll("li.active").forEach(el => el.classList.remove("active"));
+  const row = listEl.querySelector(`li[data-idx="${n}"]`);
+  if (row) row.classList.add("active");
+
+  const fname = fileName(n);
+  nowEl.textContent = trackLabel(n);
+  player.src = workerSrc(fname);
+  player.play().catch(() => {
+    // autoplay có thể bị chặn; user click Play lần đầu thì mới chạy
+  });
+}
+
+// Khi phát xong thì tự động nhảy bài kế tiếp
+player.addEventListener("ended", () => {
+  if (current < TOTAL_TRACKS) {
+    playTrack(current + 1);
+  } else {
+    // Hết playlist, nếu muốn loop thì bật dòng sau:
+    // playTrack(1);
+  }
+});
+
+// Nếu file lỗi thì bỏ qua, nhảy sang bài kế
+player.addEventListener("error", () => {
+  if (current < TOTAL_TRACKS) {
+    playTrack(current + 1);
+  }
+});
+
 
     // (Tuỳ chọn) Tự động chọn Prologue khi mở trang:
     // playTrack(1);
   </script>
 </body>
 </html>
+
 
