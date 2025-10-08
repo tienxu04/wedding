@@ -41,16 +41,23 @@
     const FILE_BASENAME = "The Wedding People A Novel.mp3";
 
     // Tạo dữ liệu hiển thị (label) khớp với quy luật tên file
+
+
     function trackLabel(n){ // n = 1..25
-      if(n === 1) return "Prologue";
-      const num = n - 1; // 2 -> Ch1, 25 -> Ch24
-      const names = [
-        "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
-        "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen","Twenty",
-        "Twenty-One","Twenty-Two","Twenty-Three","Twenty-Four"
-      ];
-      return `Chapter ${names[num-1]}`;
-    }
+  if (n === 1) return "Prologue";
+  const num = n - 1; // 2 -> Ch1, 25 -> Ch24
+  const names = [
+    "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen","Twenty",
+    "Twenty-One","Twenty-Two","Twenty-Three","Twenty-Four"
+  ];
+
+  // Tính số chương trong sách (lệch 1 từ track 17 trở đi)
+  const bookChap = n >= 17 ? num - 1 : num;
+
+  return `Chapter ${names[num - 1]} (Book ${bookChap})`;
+}
+
 
     function fileName(n){ // "01 - The Wedding People A Novel.mp3"
       const two = String(n).padStart(2, "0");
@@ -120,5 +127,6 @@ player.addEventListener("error", () => {
   </script>
 </body>
 </html>
+
 
 
