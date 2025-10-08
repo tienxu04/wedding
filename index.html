@@ -75,6 +75,7 @@
     const nowEl  = document.getElementById("now-title");
 
    let current = 1; // lưu track đang phát
+    let currentSrc = ""; // nhớ nguồn để không reload vô ích
 
 // Render danh sách track
 for (let i = 1; i <= TOTAL_TRACKS; i++) {
@@ -99,6 +100,10 @@ function playTrack(n) {
   const fname = fileName(n);
   nowEl.textContent = trackLabel(n);
   player.src = workerSrc(fname);
+   if (src !== currentSrc) {
+    player.src = src;
+    currentSrc = src;
+  }
   player.play().catch(() => {
     // autoplay có thể bị chặn; user click Play lần đầu thì mới chạy
   });
@@ -127,6 +132,7 @@ player.addEventListener("error", () => {
   </script>
 </body>
 </html>
+
 
 
 
